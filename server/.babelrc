@@ -1,0 +1,10 @@
+{
+  "presets": [
+    ["@babel/env", {
+      "targets": {
+        "chrome": "55"
+      },
+      "debug": true
+    }]
+  ]
+}

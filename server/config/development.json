@@ -1,0 +1,5 @@
+{
+  "app": "server-starter",
+  "port": 5000,
+  "mongodbUrl": "mongodb+srv://user01:skyblue7@cluster0.p8uxo.mongodb.net/test?retryWrites=true&w=majority"
+}
