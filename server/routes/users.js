@@ -35,40 +35,47 @@ router.post('/register', (req, res) => {
 });
 
 router.post('/login', (req, res) => {
-    User.findOne({email: req.body.email}, (err, user) => {
-        if (!user) {
-            return res.json({
-                loginSuccess: false,
-                message: 'Auth failed, email not found'
-            });
-        }
+    User.findOne(
+        {email: req.body.email},
+        (err, user) => {
+            if (!user) {
+                return res.json({
+                    loginSuccess: false,
+                    message: 'Auth failed, email not found'
+                });
+            }
 
-        user.comparePassword(req.body.password, (err, isMatch) => {
-            if (!isMatch)
-                return res.json({loginSuccess: false, message: 'wrong password'});
+            user.comparePassword(
+                req.body.password,
+                (err, isMatch) => {
+                    if (!isMatch)
+                        return res.json({loginSuccess: false, message: 'wrong password'});
 
-            user.generateToken((err, user) => {
-                if (err) return res.status(400).send(err);
-                res.cookie('w_authExp', user.tokenExp);
-                res
-                    .cookie('w_auth', user.token)
-                    .status(200)
-                    .json({
-                        loginSuccess: true, userId: user._id
+                    user.generateToken((err, user) => {
+                        if (err) return res.status(400).send(err);
+                        res.cookie('w_authExp', user.tokenExp);
+                        res
+                            .cookie('w_auth', user.token)
+                            .status(200)
+                            .json({
+                                loginSuccess: true, userId: user._id
+                            })
                     })
-            })
+                })
         })
-    })
 });
 
 // auth 미들웨어
 router.post('/logout', auth, (req, res) => {
-    User.findOneAndUpdate({_id: req.user._id}, {token: "", tokenExp: ""}, (err, doc) => {
-        if (err) return res.json({success: false, err});
-        return res.status(200).send({
-            success: true
+    User.findOneAndUpdate(
+        {_id: req.user._id},
+        {token: "", tokenExp: ""}, // db 조회 관련 db에 함수로 맡길 필요 없이 그냥 값 초기화 해주면 되는 거라 바로 obj를 넣는 건가
+        (err, doc) => {
+            if (err) return res.json({success: false, err});
+            return res.status(200).send({
+                success: true
+            })
         })
-    })
 })
 
 // auth 미들웨어
@@ -120,7 +127,8 @@ router.get('/removeFromCart', auth, (req, res) => {
     User.findOneAndUpdate(
         {_id: req.user._id},
         {
-            '$pull': {'cart': {'id': req.query._id}} // $pull : 해당 row만 가져오는 건가 봄
+            '$pull': {'cart': {'id': req.query._id}} // $pull : 해당 row를 삭제하는 건가 봄
+            // https://expressjs.com/ko/guide/using-middleware.html 읽기
         },
         {new: true},
         (err, userInfo) => {
@@ -129,7 +137,7 @@ router.get('/removeFromCart', auth, (req, res) => {
                 return item.id
             });
 
-            Product.find({ '_id' : { $in : array} })
+            Product.find({'_id': {$in: array}}) // 1. userInfo, Product 모델관계 2. find-$in 시행 결과
                 .populate('writer')
                 .exec((err, cartDetail) => {
                     return res.status(200).json({
