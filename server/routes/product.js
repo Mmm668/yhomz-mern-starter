@@ -48,7 +48,7 @@ router.post('/uploadProduct', auth, (req, res) => {
 
 // [model].find 와 [model].findOneAndUpdate 쓰임새, 차이점
 // find안에의 $in, populate()
-// result list 정렬 
+// result list 정렬
 router.post('/getProducts', (req, res) => {
     let order = req.body.order ? req.body.order : 'desc';
     let sortBy = req.body.sortBy ? req.body.sortBy : '_id';
@@ -95,6 +95,32 @@ router.post('/getProducts', (req, res) => {
                 res.status(200).json({success: true, products, postSize: products.length})
             })
     }
+})
+
+//?id=${productId}&type=single
+//id=12121212,121212,1212121   type=array
+router.get('/products_by_id', (req, res)=>{
+    let type = req.query.type
+    let productIds = req.query.id
+    console.log('@@ req.query.id', req.query.id);
+
+    if(type === 'array'){
+        let ids = req.query.id.split(',');
+        productIds = [];
+        productIds = ids.map(item => {
+            return item
+        })
+    }
+    console.log('@@ productIds', productIds);
+
+    //we need to find the product information that belong to product Id
+    Product.find(
+        {'_id': {$in: productIds}})
+        .populate('writer')
+        .exec((err, product) => {
+            if(err)return res.status(400).send(err)
+            return res.status(200).send(product)
+        })
 })
 
 module.exports = router;
