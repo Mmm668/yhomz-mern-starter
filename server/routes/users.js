@@ -70,4 +70,74 @@ router.post('/logout', auth, (req, res) => {
         })
     })
 })
+
+// auth 미들웨어
+router.get('/addToCart', auth, (req, res) => {
+    User.findOne({_id: req.user._id}, (err, userInfo) => {
+        let duplicate = false;
+        console.log('@@ userInfo', userInfo);
+
+        userInfo.cart.forEach((item) => {
+            if (item.id === req.query.productId) {
+                duplicate = true; // 같은 게 있으면 듀플리케잇으로 처리해서, 같은 걸로 인식하게 해서 수량 증가로 처리하려는 장치인가
+            }
+        })
+
+        if (duplicate) {
+            User.findOneAndUpdate(
+                {_id: req.user._id, 'cart.id': req.query.productId},
+                {$inc: {'cart.$.quantity': 1}},
+                {new: true},
+                (err, userInfo) => {
+                    if (err) return res.json({success: false, err});
+                    res.status(200).json(userInfo.cart)
+                }
+            )
+        } else {
+            User.findOneAndUpdate(
+                {_id: req.user._id},
+                {
+                    $push: {
+                        cart: {
+                            id: req.query.productId,
+                            quantity: 1,
+                            date: Date.now()
+                        }
+                    }
+                },
+                {new: true},
+                (err, userInfo) => {
+                    if (err) return res.json({success: false, err});
+                    res.status(200).json(userInfo.cart)
+                }
+            )
+        }
+    })
+})
+
+// auth 미들웨어
+router.get('/removeFromCart', auth, (req, res) => {
+    User.findOneAndUpdate(
+        {_id: req.user._id},
+        {
+            '$pull': {'cart': {'id': req.query._id}} // $pull : 해당 row만 가져오는 건가 봄
+        },
+        {new: true},
+        (err, userInfo) => {
+            let cart = userInfo.cart;
+            let array = cart.map(item => {
+                return item.id
+            });
+
+            Product.find({ '_id' : { $in : array} })
+                .populate('writer')
+                .exec((err, cartDetail) => {
+                    return res.status(200).json({
+                        cartDetail,
+                        cart
+                    })
+                })
+        }
+    )
+})
 module.exports = router;
